@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最近比赛</title>
+    <style>
+        /* Reset some basic elements */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Style the table */
+        #contestTable {
+            width: 90%;
+            max-width: 1000px;
+            border-collapse: collapse;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #contestTable th,
+        #contestTable td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #contestTable th {
+            background-color: #007BFF;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #contestTable td {
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        #contestTable tr:nth-child(even) td {
+            background-color: #f1f1f1;
+        }
+
+        #contestTable tr:hover td {
+            background-color: #e0e7ff;
+            cursor: pointer;
+        }
+
+        /* Responsive design */
+        @media screen and (max-width: 768px) {
+            #contestTable th,
+            #contestTable td {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <table id="contestTable">
+        <thead>
+        <tr>
+            <th>OJ</th>
+            <th>Name</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Countdown</th>
+        </tr>
+        </thead>
+        <tbody id="main">
+            <!-- Data will be dynamically inserted here -->
+        </tbody>
+    </table>
+
+    <script src="/js/contest.js"></script>
+    <script src="/js/getTime.js"></script>
+</body>
+</html>
