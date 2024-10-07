@@ -136,3 +136,12 @@ h6::before {
   -webkit-animation: ccc 6s linear infinite;
   animation: ccc 6s linear infinite;
 }
+
+.custom_codeforces {
+  display: inline-block;
+  width: 20px;   /* 图标宽度 */
+  height: 20px;  /* 图标高度 */
+  background: url('https://picbed.octalzhihao.top/img/202410080039448.png') no-repeat center;
+  background-size: contain;
+  vertical-align: middle;
+}
