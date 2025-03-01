@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>Windows中PDF, TXT, Excel, Word, PPT等文件在预览窗口无法预览的解决办法(全)</title>
+      <link href="/posts/16752.html"/>
+      <url>/posts/16752.html</url>
+      
+        <content type="html"><![CDATA[<p>系统环境：Windows11</p><p>🤝 参考文章：<a href="https://blog.csdn.net/qq_58094000/article/details/144906747">https://blog.csdn.net/qq_58094000/article/details/144906747</a></p><p>⚠️<strong>注意：以上方法均会对注册表进行修改，一定要先备份整个注册表，以防万一，避免导致系统错误</strong>❗</p><h2 id="情况一显示没有预览"><a class="markdownIt-Anchor" href="#情况一显示没有预览"></a> 情况一：显示没有预览</h2><ol><li>打开文件资源管理器-文件-查看-预览窗格</li></ol><p><img src="https://picbed.octalzhihao.top/img/202503012331221.png" alt="alt text" /></p><ol start="2"><li>在文件资源管理器的右边就会显示预览窗格，此时发现Word 、Excel、 PPT等Office文件是无法正常预览的，显示没有预览。</li></ol><p><img src="https://picbed.octalzhihao.top/img/202503012331222.png" alt="alt text" /></p><h3 id="方法手动修改注册表"><a class="markdownIt-Anchor" href="#方法手动修改注册表"></a> 方法：手动修改注册表</h3><p>1.准备工作：先将所有Office相关的文件类型默认应用改为Office（之前可能被wps改为了使用wps打开），打开设置-应用-默认应用-按文件类型指定默认应用。若预览还是不能正常显示，直接进行步骤2.</p><p>2.修改与Office文件预览相关的注册表 2个项目的值，Office文件修改注册表的方式差不多，我们就以Word文件Docx为例。</p><p><strong>(1) 使用快捷键 Windows +R 运行，然后输入 “regedit” 命令，打开注册表编辑器</strong></p><p><strong>(2) 找到这一项：</strong></p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">计算机\HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\PreviewHandlers</span><br></pre></td></tr></table></figure><p><img src="https://picbed.octalzhihao.top/img/202503012331223.png" alt="alt text" /></p><p>（3）找到Microsoft Word previewer 这个值 对应的名称 ，把这个名称复制，作者的值是：<code>&#123;84F66100-FF7C-4fb4-B0C0-02CD7FB668FE&#125;</code></p><p><font color="red">注意一：若你的路径及数值名称和数值数据是正确的——可直接复制{84F66100-FF7C-4fb4-B0C0-02CD7FB668FE}，不用进行下面的操作。</p><p>注意二：若你的注册表的word文件类型被错误地设置为“可扩充字符串（REG_EXPAND_SZ”，需要先删除 {84F66100-FF7C-4fb4-B0C0-02CD7FB668FE} 这一项，再重新创建 {84F66100-FF7C-4fb4-B0C0-02CD7FB668FE} ，类型设置为&quot;字符串REG_SZ&quot;；修改其值为 修改其值为 Microsoft Word previewer</p><p>注意三：若你的注册表中没有找到这个项目，则按照上面的方法手工创建，另外&quot;Microsoft Word Previewer&quot;或者&quot;Microsoft Word 预览器&quot; 最好使用前面的全英文值， “Microsoft Excel Previewer&quot;或者&quot;Microsoft Excel 预览器” 也是如此。<br /></font><br /><img src="https://picbed.octalzhihao.top/img/202503012331224.png" alt="alt text" /></p><p>（4）在注册表中找到这一项 ShellEx，具体路径为<code>HKEY_CLASSES_ROOT\.docx\ShellEx\&#123;8895b1c6-b41f-4c1c-a562-0d564250836f&#125;</code>，将此处的数值数据改为上述步骤（3）里面复制的值<code>&#123;84F66100-FF7C-4fb4-B0C0-02CD7FB668FE&#125;</code>，点击确定即可。</p><p><img src="https://picbed.octalzhihao.top/img/202503012331225.png" alt="alt text" /></p><p>（5）打开文件资源管理器，再打开预览窗格，文件预览就正常了。</p><p><img src="https://picbed.octalzhihao.top/img/202503012331226.png" alt="alt text" /></p><p><strong>3.Excel 、PPT、 OUTLOOK等其它Office也是按照上述方法操作的，以下是按照上述方法操作后的结果：</strong></p><p><img src="https://picbed.octalzhihao.top/img/202503012331227.png" alt="alt text" /></p><h3 id="常用的相关的注册项名称如下"><a class="markdownIt-Anchor" href="#常用的相关的注册项名称如下"></a> 常用的相关的注册项名称如下：</h3><table><thead><tr><th>数值名称</th><th>数值数据</th></tr></thead><tbody><tr><td>{00020827-0000-0000-C000-000000000046}</td><td>Microsoft Excel previewer</td></tr><tr><td>{1531d583-8375-4d3f-b5fb-d23bbd169f22}</td><td>Windows TXT Previewer</td></tr><tr><td>{21E17C2F-AD3A-4b89-841F-09CFE02D16B7}</td><td>Microsoft Visio previewer</td></tr><tr><td>{3A84F9C2-6164-485C-A7D9-4B27F8AC009E}</td><td>Microsoft PDF Previewer</td></tr><tr><td>{65235197-874B-4A07-BDC5-E65EA825B718}</td><td>Microsoft PowerPoint previewer</td></tr><tr><td>{84F66100-FF7C-4fb4-B0C0-02CD7FB668FE}</td><td>Microsoft Word previewer</td></tr><tr><td>{DC6EFB56-9CFA-464D-8880-44885D7DC193}</td><td>Adobe PDF Preview Handler for Vista</td></tr></tbody></table><h2 id="情况二由于microsoft-word预览器中出现错误无法预览此文件"><a class="markdownIt-Anchor" href="#情况二由于microsoft-word预览器中出现错误无法预览此文件"></a> 情况二：由于Microsoft Word预览器中出现错误，无法预览此文件。</h2><p>具体如下图所示：</p><p><img src="https://picbed.octalzhihao.top/img/202503012331228.png" alt="alt text" /></p><p>产生原因是由于该文件是从互联网上获取的，Windows自动开启了保护视图，导致无法预览。</p><p>与此同时，打开这种文件也一般会如下图所示：</p><p><img src="https://picbed.octalzhihao.top/img/202503012331229.png" alt="alt text" /></p><p>这样只要**“启用编辑”后保存**，就不再是受保护视图了。</p><p>然后就可以正常在预览窗口预览了。</p><p>除此之外，也可以右键-属性，勾选<code>解除锁定</code>，应用。用此方法也可以解除受保护视图。</p><p><img src="https://picbed.octalzhihao.top/img/202503012331230.png" alt="alt text" /></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 杂谈 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Windows系统问题 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>【手册】NLP词性标注对照表</title>
       <link href="/posts/55593.html"/>
       <url>/posts/55593.html</url>
