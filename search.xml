@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>ACM常用库函数系列：lower_bound/upper_bound</title>
+      <link href="/posts/21889.html"/>
+      <url>/posts/21889.html</url>
+      
+        <content type="html"><![CDATA[<p>在C++中，lower_bound和upper_bound是用于在有序序列中高效查找元素的函数，位于<algorithm>头文件。它们的时间复杂度为O(log n)（要求随机访问迭代器）。</p><p>一般来说，这两个函数能实现的功能，使用二分法都能实现；不过为了编码速度和代码的简洁性，在程序的某个环节如果需要一个简单二分查找了，我们往往还是使用这两个函数来查找。</p><h2 id="功能简要说明"><a class="markdownIt-Anchor" href="#功能简要说明"></a> 功能简要说明</h2><p><strong>lower_bound</strong>：返回第一个<strong>不小于</strong>value的元素的位置。<br /><strong>upper_bound</strong>：返回第一个<strong>大于</strong>value的元素的位置。</p><h2 id="函数原型"><a class="markdownIt-Anchor" href="#函数原型"></a> 函数原型</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> ForwardIt, <span class="keyword">class</span> T &gt;</span></span><br><span class="line"><span class="function">ForwardIt <span class="title">lower_bound</span><span class="params">( ForwardIt first, ForwardIt last, <span class="type">const</span> T&amp; value )</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> ForwardIt, <span class="keyword">class</span> T &gt;</span></span><br><span class="line"><span class="function">ForwardIt <span class="title">upper_bound</span><span class="params">( ForwardIt first, ForwardIt last, <span class="type">const</span> T&amp; value )</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 带自定义比较函数的版本</span></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> ForwardIt, <span class="keyword">class</span> T, <span class="keyword">class</span> Compare &gt;</span></span><br><span class="line"><span class="function">ForwardIt <span class="title">lower_bound</span><span class="params">( ForwardIt first, ForwardIt last, <span class="type">const</span> T&amp; value, Compare comp )</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">template</span>&lt; <span class="keyword">class</span> ForwardIt, <span class="keyword">class</span> T, <span class="keyword">class</span> Compare &gt;</span></span><br><span class="line"><span class="function">ForwardIt <span class="title">upper_bound</span><span class="params">( ForwardIt first, ForwardIt last, <span class="type">const</span> T&amp; value, Compare comp )</span></span>;</span><br></pre></td></tr></table></figure><h2 id="详细用法"><a class="markdownIt-Anchor" href="#详细用法"></a> 详细用法</h2><blockquote><p>首先使用这两个函数的一个前提条件是：有序。<br />如果是对于数组使用，需要先保证数组是有序的；如果对于集合使用，需要确保是set，而不是unordered_set，因为set是默认有序的。</p></blockquote><p>前文提到了，lower_bound其实就是找&gt;=value的边界，upper_bound其实就是找&gt;value的边界。<br />那么，如何找&lt;和&lt;=的边界值呢？<br />其实我们可以通过&gt;value的第一个元素来确定&lt;=value的最后一个元素；同理&lt;也可以通过&gt;=来确定。<br />由于这两个函数返回值都是指针，所以我们可以利用prev()来获取上一个位置。<br />总结来说就是：<br />找边界值的下标</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">lower_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), value) - a.<span class="built_in">begin</span>() <span class="comment">// &gt;=vaule</span></span><br><span class="line"><span class="built_in">prev</span>(<span class="built_in">upper_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), value)) - a.<span class="built_in">begin</span>() <span class="comment">// &lt;=vaule</span></span><br><span class="line"><span class="built_in">upper_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), value) - a.<span class="built_in">begin</span>() <span class="comment">// &gt;vaule</span></span><br><span class="line"><span class="built_in">prev</span>(<span class="built_in">lower_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), value)) - a.<span class="built_in">begin</span>() <span class="comment">// &lt;vaule</span></span><br></pre></td></tr></table></figure><p>如果是需要获取对应位置上的值，用一个*获取地址上的值即可，例如：</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> t = *<span class="built_in">lower_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), value);</span><br></pre></td></tr></table></figure><p><strong>找不到的时候</strong>:<br />lower_bound()和upper_bound()都是返回数组的最后一个元素后面一个位置。</p><hr /><p>这两个函数不仅对数组（int[]/vector<int>()）适用，对set也是适用的，set没有位置（下标）的区分，一般来说都是查找值，具体用法如下：</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">set&lt;<span class="type">int</span>&gt; st = &#123;<span class="number">5</span>, <span class="number">1</span>, <span class="number">9</span>, <span class="number">3</span>, <span class="number">0</span>&#125;;</span><br><span class="line"><span class="comment">// 找到&gt;=2的最小数, 输出3</span></span><br><span class="line">cout &lt;&lt; *st.<span class="built_in">lower_bound</span>(<span class="number">2</span>) &lt;&lt; endl;</span><br><span class="line"><span class="comment">// 找不到的时候返回st.end(), 输出1, 表示true</span></span><br><span class="line">cout &lt;&lt; (st.<span class="built_in">lower_bound</span>(<span class="number">10</span>) == st.<span class="built_in">end</span>()) &lt;&lt; endl;</span><br></pre></td></tr></table></figure><blockquote><p>如果要找&gt;, &lt;, &lt;=和vector是同理的。</p></blockquote><h2 id="通过实际案例理解"><a class="markdownIt-Anchor" href="#通过实际案例理解"></a> 通过实际案例理解</h2><p>以下列举了几种特殊边界情况，大家可以看着案例理解一下：</p><p>找&lt;=的右边界：</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注意数组下标从0开始</span></span><br><span class="line">vector&lt;<span class="type">int</span>&gt; a = &#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;;</span><br><span class="line"><span class="comment">// 找&lt;=6的最后一个数的位置</span></span><br><span class="line"><span class="type">int</span> res = <span class="built_in">prev</span>(<span class="built_in">upper_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), <span class="number">6</span>)) - a.<span class="built_in">begin</span>();</span><br><span class="line"><span class="comment">// res = 5</span></span><br><span class="line">cout &lt;&lt; res &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 找&lt;=5的最后一个数的位置</span></span><br><span class="line">res = <span class="built_in">prev</span>(<span class="built_in">upper_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), <span class="number">5</span>)) - a.<span class="built_in">begin</span>();</span><br><span class="line"><span class="comment">// res = 5</span></span><br><span class="line">cout &lt;&lt; res &lt;&lt; endl;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 找&lt;=-1的最后一个数的位置</span></span><br><span class="line">res = <span class="built_in">prev</span>(<span class="built_in">upper_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), <span class="number">-1</span>)) - a.<span class="built_in">begin</span>();</span><br><span class="line"><span class="comment">// 找不到，此时的prev(upper_bound(a.begin(), a.end(), -1))其实是会返回a.begin()的前一个位置</span></span><br><span class="line"><span class="comment">// res = -1</span></span><br><span class="line">cout &lt;&lt; res &lt;&lt; endl;</span><br></pre></td></tr></table></figure><p>找&gt;=的左边界</p><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注意数组下标从0开始</span></span><br><span class="line">vector&lt;<span class="type">int</span>&gt; a = &#123;<span class="number">0</span>, <span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;;</span><br><span class="line"><span class="comment">// 找&gt;=6的第一个数的位置</span></span><br><span class="line"><span class="type">int</span> res = <span class="built_in">lower_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), <span class="number">6</span>) - a.<span class="built_in">begin</span>();</span><br><span class="line"><span class="comment">// 找不到，此时lower_bound返回的是a.end()，5后面一个位置</span></span><br><span class="line"><span class="comment">// res = 6</span></span><br><span class="line">cout &lt;&lt; res &lt;&lt; endl;</span><br><span class="line"><span class="comment">// 输出 0</span></span><br><span class="line">cout &lt;&lt; <span class="built_in">lower_bound</span>(a.<span class="built_in">begin</span>(), a.<span class="built_in">end</span>(), <span class="number">6</span>) - a.<span class="built_in">end</span>() &lt;&lt; endl;</span><br></pre></td></tr></table></figure>]]></content>
+      
+      
+      <categories>
+          
+          <category> 算法随笔 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 算法 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>nndl学习笔记 第一章：绪论</title>
       <link href="/posts/1115.html"/>
       <url>/posts/1115.html</url>
@@ -97,9 +122,9 @@
       
         <tags>
             
-            <tag> 比赛题解 </tag>
-            
             <tag> 算法 </tag>
+            
+            <tag> 比赛题解 </tag>
             
         </tags>
       
@@ -368,9 +393,9 @@
       
         <tags>
             
-            <tag> 比赛题解 </tag>
-            
             <tag> 算法 </tag>
+            
+            <tag> 比赛题解 </tag>
             
         </tags>
       
@@ -395,9 +420,9 @@
       
         <tags>
             
-            <tag> 比赛题解 </tag>
-            
             <tag> 算法 </tag>
+            
+            <tag> 比赛题解 </tag>
             
         </tags>
       
