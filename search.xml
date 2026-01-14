@@ -4,6 +4,31 @@
   
     
     <entry>
+      <title>第 4 章：注意力机制与Transformer 学习笔记</title>
+      <link href="/posts/13793.html"/>
+      <url>/posts/13793.html</url>
+      
+        <content type="html"><![CDATA[<h1 id="第一节-seq2seq-架构"><a class="markdownIt-Anchor" href="#第一节-seq2seq-架构"></a> 第一节 Seq2Seq 架构</h1><h2 id="1-为什么需要-seq2seq"><a class="markdownIt-Anchor" href="#1-为什么需要-seq2seq"></a> 1. 为什么需要 Seq2Seq</h2><p>传统 RNN / LSTM 擅长三类任务：</p><ul><li><strong>Many-to-One</strong>：序列 → 一个向量（情感分类）</li><li><strong>Many-to-Many（对齐）</strong>：每个输入对应一个输出（NER、POS）</li><li><strong>One-to-Many</strong>：固定输入 → 序列（图像描述）</li></ul><p>但在 <strong>机器翻译</strong> 这类任务中：</p><ul><li>输入输出 <strong>长度不固定</strong></li><li>输入输出 <strong>不严格对齐</strong></li></ul><p>→ 需要一种能“整体理解一句话，再生成另一句话”的结构<br />→ <strong>Seq2Seq（Encoder–Decoder）</strong></p><hr /><h2 id="2-从-autoencoder-到-seq2seq"><a class="markdownIt-Anchor" href="#2-从-autoencoder-到-seq2seq"></a> 2. 从 Autoencoder 到 Seq2Seq</h2><p><strong>Autoencoder</strong>：</p><ul><li>Encoder：输入 → 潜在向量</li><li>Decoder：潜在向量 → 重构输入</li><li>目标：<strong>还原自己</strong></li></ul><p><strong>Seq2Seq</strong>：</p><ul><li>Encoder：输入序列 → 语义表示</li><li>Decoder：语义表示 → <strong>新序列</strong></li><li>目标：<strong>序列转换</strong>（而不是重构）</li></ul><p>👉 本质变化：<br /><strong>重构 → 生成</strong></p><hr /><h2 id="3-seq2seq-核心结构"><a class="markdownIt-Anchor" href="#3-seq2seq-核心结构"></a> 3. Seq2Seq 核心结构</h2><h3 id="31-整体思想"><a class="markdownIt-Anchor" href="#31-整体思想"></a> 3.1 整体思想</h3><ul><li>Encoder：读完整个输入序列，压缩成一个 <strong>上下文向量 C</strong></li><li>Decoder：以 C 为条件，自回归生成输出序列</li></ul><p>常见实现：<br />Encoder / Decoder 都用 <strong>RNN / LSTM / GRU</strong></p><hr /><h3 id="32-encoder编码器"><a class="markdownIt-Anchor" href="#32-encoder编码器"></a> 3.2 Encoder（编码器）</h3><ul><li>顺序读取输入词元 (x_1 \sim x_T)</li><li>不断更新隐藏状态</li><li><strong>最后一个时间步的状态 = 上下文向量 C</strong></li></ul><p>常见做法：</p><ul><li>RNN：(C = h_T)</li><li>LSTM：(C = (h_T, c_T))</li></ul><p>补充：</p><ul><li>Encoder 可用 <strong>双向 RNN</strong></li><li>C 也可以由所有 hidden states 聚合得到（拼接 / pooling）</li></ul><hr /><h3 id="33-decoder解码器"><a class="markdownIt-Anchor" href="#33-decoder解码器"></a> 3.3 Decoder（解码器）</h3><ul><li><p>本质是一个 <strong>条件语言模型</strong></p></li><li><p>初始状态由 C 初始化</p></li><li><p>从 <code>&lt;SOS&gt;</code> 开始逐词生成</p></li><li><p>每一步输入：</p><ul><li>上一步生成的词</li><li>上一步的隐藏状态</li></ul></li><li><p>遇到 <code>&lt;EOS&gt;</code> 或达到最大长度停止</p></li></ul><p>关键特性：</p><ul><li><strong>自回归</strong></li><li>单向（满足因果性）</li></ul><hr /><h3 id="34-decoder-与大语言模型的关系"><a class="markdownIt-Anchor" href="#34-decoder-与大语言模型的关系"></a> 3.4 Decoder 与大语言模型的关系</h3><ul><li><p>去掉 Encoder，只保留 Decoder<br />→ <strong>Decoder-only Language Model</strong></p></li><li><p>GPT 就是：</p><ul><li>预测下一个 token</li><li>用 prompt 作为条件</li></ul></li></ul><p>👉 Seq2Seq = Encoder + 条件 LM</p><p>👉 GPT = 纯 LM</p><hr /><h2 id="4-关键实现细节"><a class="markdownIt-Anchor" href="#4-关键实现细节"></a> 4. 关键实现细节</h2><h3 id="41-embedding-是否共享"><a class="markdownIt-Anchor" href="#41-embedding-是否共享"></a> 4.1 Embedding 是否共享</h3><ul><li><strong>不共享</strong>：源语言 ≠ 目标语言（英→中）</li><li><strong>共享</strong>：输入输出同语言（摘要、改写）</li></ul><p>共享优点：</p><ul><li>参数更少</li><li>可能学到词语间的隐式对齐</li></ul><hr /><h3 id="42-上下文向量-c-的用法"><a class="markdownIt-Anchor" href="#42-上下文向量-c-的用法"></a> 4.2 上下文向量 C 的用法</h3><p><strong>方式一：初始化 Decoder 状态（经典）</strong></p><ul><li>简单直观</li><li>信息可能随时间衰减</li></ul><p><strong>方式二：每个时间步都输入 C</strong></p><ul><li>每步都有全局信息</li><li>但 C 是静态的，仍然无法对齐</li></ul><p>👉 两种方式都存在 <strong>信息瓶颈</strong></p><hr /><h3 id="43-损失函数"><a class="markdownIt-Anchor" href="#43-损失函数"></a> 4.3 损失函数</h3><ul><li>每个时间步做一次 softmax</li><li>用 <strong>CrossEntropyLoss</strong></li><li>忽略 <code>&lt;PAD&gt;</code>（ignore_index）</li><li>总损失 = 各时间步损失之和 / 平均</li></ul><hr /><h3 id="44-特殊-token-与数据构造"><a class="markdownIt-Anchor" href="#44-特殊-token-与数据构造"></a> 4.4 特殊 Token 与数据构造</h3><p>常见 token：</p><ul><li><code>&lt;PAD&gt;</code>：填充</li><li><code>&lt;SOS&gt;</code>：解码起始</li><li><code>&lt;EOS&gt;</code>：句子结束</li><li><code>&lt;UNK&gt;</code>：未登录词</li></ul><p>Decoder 训练时的“错位”设计：</p><ul><li>原目标：<code>W X Y Z</code></li><li>Decoder 输入：<code>&lt;SOS&gt; W X Y</code></li><li>Decoder 目标：<code>W X Y Z &lt;EOS&gt;</code></li></ul><hr /><h2 id="5-训练-vs-推理"><a class="markdownIt-Anchor" href="#5-训练-vs-推理"></a> 5. 训练 vs 推理</h2><h3 id="51-教师强制teacher-forcing"><a class="markdownIt-Anchor" href="#51-教师强制teacher-forcing"></a> 5.1 教师强制（Teacher Forcing）</h3><p>训练时：</p><ul><li><p>下一步输入 <strong>用真实标签</strong></p></li><li><p>好处：</p><ul><li>收敛更快</li><li>更稳定</li></ul></li><li><p>缺点：</p><ul><li>训练 / 推理不一致（exposure bias）</li></ul></li></ul><hr /><h3 id="52-推理自回归"><a class="markdownIt-Anchor" href="#52-推理自回归"></a> 5.2 推理（自回归）</h3><p>推理时：</p><ul><li>没有真实答案</li><li>用 <strong>自己上一步的预测</strong> 作为输入</li></ul><p>实现要点：</p><ul><li><strong>缓存 hidden / cell</strong></li><li>每一步只算一次 RNN</li><li>避免从头重复计算</li></ul><hr /><h3 id="53-解码策略"><a class="markdownIt-Anchor" href="#53-解码策略"></a> 5.3 解码策略</h3><ul><li><p><strong>Greedy Search</strong></p><ul><li>每步选最大概率</li><li>快，但容易局部最优</li></ul></li><li><p><strong>Beam Search</strong></p><ul><li>保留多个候选</li><li>全局效果更好</li></ul></li></ul><hr /><h2 id="6-seq2seq-的泛化应用"><a class="markdownIt-Anchor" href="#6-seq2seq-的泛化应用"></a> 6. Seq2Seq 的泛化应用</h2><p>Encoder–Decoder 是一种<strong>通用转换范式</strong>：</p><ul><li>语音 → 文本（ASR）</li><li>图像 → 文本（Image Caption）</li><li>文本 → 语音（TTS）</li><li>QA / 摘要 / 对话</li><li>甚至分类也可“生成化”</li></ul><hr /><h2 id="7-核心局限信息瓶颈"><a class="markdownIt-Anchor" href="#7-核心局限信息瓶颈"></a> 7. 核心局限：信息瓶颈</h2><p>问题本质：</p><ul><li>Encoder → Decoder 之间 <strong>只有一个固定长度向量 C</strong></li></ul><p>后果：</p><ol><li><strong>长句信息压缩困难</strong></li><li>Decoder 每一步看到的都是同一个 C</li><li>无法“对齐”输入与输出位置</li></ol><p>直观理解：</p><blockquote><p>让人把一整篇文章压缩成一句话，再复述全文</p></blockquote><p>👉 直接催生了 <strong>Attention 机制</strong></p><p>👉 最终发展为 <strong>Transformer</strong></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> base-llm学习笔记 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> datawhale组队学习, base-llm学习笔记, 大模型 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享</title>
       <link href="/posts/22078.html"/>
       <url>/posts/22078.html</url>

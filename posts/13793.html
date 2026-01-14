@@ -1,0 +1,556 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>第 4 章：注意力机制与Transformer 学习笔记 | Octal's Tiny Home🍭</title><meta name="author" content="octal"><meta name="copyright" content="octal"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="第一节 Seq2Seq 架构  1. 为什么需要 Seq2Seq 传统 RNN &#x2F; LSTM 擅长三类任务：  Many-to-One：序列 → 一个向量（情感分类） Many-to-Many（对齐）：每个输入对应一个输出（NER、POS） One-to-Many：固定输入 → 序列（图像描述）  但在 机器翻译 这类任务中：  输入输出 长度不固定 输入输出 不严格对齐  → 需要一种能“整体">
+<meta property="og:type" content="article">
+<meta property="og:title" content="第 4 章：注意力机制与Transformer 学习笔记">
+<meta property="og:url" content="https://blog.octalzhihao.top/posts/13793.html">
+<meta property="og:site_name" content="Octal&#39;s Tiny Home🍭">
+<meta property="og:description" content="第一节 Seq2Seq 架构  1. 为什么需要 Seq2Seq 传统 RNN &#x2F; LSTM 擅长三类任务：  Many-to-One：序列 → 一个向量（情感分类） Many-to-Many（对齐）：每个输入对应一个输出（NER、POS） One-to-Many：固定输入 → 序列（图像描述）  但在 机器翻译 这类任务中：  输入输出 长度不固定 输入输出 不严格对齐  → 需要一种能“整体">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_4.webp">
+<meta property="article:published_time" content="2026-01-14T12:35:23.000Z">
+<meta property="article:modified_time" content="2026-01-14T12:52:52.469Z">
+<meta property="article:author" content="octal">
+<meta property="article:tag" content="datawhale组队学习, base-llm学习笔记, 大模型">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_4.webp"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://blog.octalzhihao.top/posts/13793.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=4.13.0"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.min.css" media="print" onload="this.media='all'"><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"找不到您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  noticeOutdate: {"limitDay":500,"position":"top","messagePrev":"It has been","messageNext":"days since the last update, the content of the article may be outdated."},
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false},
+  copy: {
+    success: '复制成功',
+    error: '复制错误',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: true,
+    post: true
+  },
+  runtime: '天',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: {"limitCount":50,"languages":{"author":"作者: octal","link":"链接: ","source":"来源: Octal's Tiny Home🍭","info":"著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。"}},
+  lightbox: 'fancybox',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.11.1/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '第 4 章：注意力机制与Transformer 学习笔记',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  postUpdate: '2026-01-14 20:52:52'
+}</script><script>(win=>{
+      win.saveToLocal = {
+        set: (key, value, ttl) => {
+          if (ttl === 0) return
+          const now = Date.now()
+          const expiry = now + ttl * 86400000
+          const item = {
+            value,
+            expiry
+          }
+          localStorage.setItem(key, JSON.stringify(item))
+        },
+      
+        get: key => {
+          const itemStr = localStorage.getItem(key)
+      
+          if (!itemStr) {
+            return undefined
+          }
+          const item = JSON.parse(itemStr)
+          const now = Date.now()
+      
+          if (now > item.expiry) {
+            localStorage.removeItem(key)
+            return undefined
+          }
+          return item.value
+        }
+      }
+    
+      win.getScript = (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        script.onerror = reject
+        script.onload = script.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          script.onload = script.onreadystatechange = null
+          resolve()
+        }
+
+        Object.keys(attr).forEach(key => {
+          script.setAttribute(key, attr[key])
+        })
+
+        document.head.appendChild(script)
+      })
+    
+      win.getCSS = (url, id = false) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onerror = reject
+        link.onload = link.onreadystatechange = function() {
+          const loadState = this.readyState
+          if (loadState && loadState !== 'loaded' && loadState !== 'complete') return
+          link.onload = link.onreadystatechange = null
+          resolve()
+        }
+        document.head.appendChild(link)
+      })
+    
+      win.activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      win.activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+      const t = saveToLocal.get('theme')
+    
+        if (t === 'dark') activateDarkMode()
+        else if (t === 'light') activateLightMode()
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        if (asideStatus === 'hide') {
+          document.documentElement.classList.add('hide-aside')
+        } else {
+          document.documentElement.classList.remove('hide-aside')
+        }
+      }
+    
+      const detectApple = () => {
+        if(/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)){
+          document.documentElement.classList.add('apple')
+        }
+      }
+      detectApple()
+    })(window)</script><link rel="stylesheet" href="/css/cat.css"><link rel="stylesheet" href="/css/readPercent.css"><link rel="stylesheet" href="/css/custom.css"><span id="fps"></span><div id="myscoll"></div><!-- hexo injector head_end start -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.12.0/dist/katex.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Zfour/Butterfly-double-row-display@1.00/cardlistpost.min.css"/>
+<style>#recent-posts > .recent-post-item >.recent-post-info > .article-meta-wrap > .tags:before {content:"\A";
+  white-space: pre;}#recent-posts > .recent-post-item >.recent-post-info > .article-meta-wrap > .tags > .article-meta__separator{display:none}</style>
+<link rel="stylesheet" href="/css/runtime.css" media="print" onload="this.media='all'"><link rel="stylesheet" href="https://npm.elemecdn.com/hexo-filter-gitcalendar/lib/gitcalendar.css" media="print" onload="this.media='all'"><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head><body><div id="loading-box"><div class="loading-left-bg"></div><div class="loading-right-bg"></div><div class="spinner-box"><div class="configure-border-1"><div class="configure-core"></div></div><div class="configure-border-2"><div class="configure-core"></div></div><div class="loading-word">加载中...</div></div></div><script>(()=>{
+  const $loadingBox = document.getElementById('loading-box')
+  const $body = document.body
+  const preloader = {
+    endLoading: () => {
+      $body.style.overflow = ''
+      $loadingBox.classList.add('loaded')
+    },
+    initLoading: () => {
+      $body.style.overflow = 'hidden'
+      $loadingBox.classList.remove('loaded')
+    }
+  }
+
+  preloader.initLoading()
+  window.addEventListener('load',() => { preloader.endLoading() })
+
+  if (true) {
+    document.addEventListener('pjax:send', () => { preloader.initLoading() })
+    document.addEventListener('pjax:complete', () => { preloader.endLoading() })
+  }
+})()</script><div id="web_bg"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img is-center"><img src="https://picbed.octalzhihao.top/img/myblog/profile.jpg" onerror="onerror=null;src='/img/friend_404.gif'" alt="avatar"/></div><div class="sidebar-site-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">20</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><hr class="custom-hr"/><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw hide"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> ACM生涯</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E7%AE%97%E6%B3%95%E9%A2%98%E8%A7%A3/"><i class="fa-fw fas fa-paper-plane"></i><span> 算法题解</span></a></li><li><a class="site-page child" href="/categories/%E7%AE%97%E6%B3%95%E9%9A%8F%E7%AC%94/"><i class="fa-fw fas fa-solid fa-laptop-code"></i><span> 算法随笔</span></a></li><li><a class="site-page child" href="/contests/"><i class="fa-fw fas fa-solid fa-bell"></i><span> 近期比赛</span></a></li><li><a class="site-page child" href="/rankinynu/"><i class="fa-fw fas fa-regular fa-ranking-star"></i><span> 校队积分榜</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 开发笔记</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E5%AE%9E%E7%94%A8%E6%89%8B%E5%86%8C/"><i class="fa-fw fas fa-solid fa-book"></i><span> 实用手册</span></a></li><li><a class="site-page child" href="/categories/%E6%9D%82%E8%B0%88/"><i class="fa-fw fas fa-solid fa-laptop-code"></i><span> 杂谈</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 炼丹之路</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><i class="fa-fw fas fa-brands fa-battle-net"></i><span> 深度学习</span></a></li><li><a class="site-page child" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><i class="fa-fw fas fa-regular fa-robot"></i><span> 机器学习</span></a></li><li><a class="site-page child" href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/"><i class="fa-fw fas fa-solid fa-comment-alt"></i><span> 自然语言处理</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 个人</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url('https://picbed.octalzhihao.top/img/myblog/cover/default_cover_4.webp')"><nav id="nav"><span id="blog-info"><a href="/" title="Octal's Tiny Home🍭"><span class="site-name">Octal's Tiny Home🍭</span></a></span><div id="menus"><div id="search-button"><a class="site-page social-icon search" href="javascript:void(0);"><i class="fas fa-search fa-fw"></i><span> 搜索</span></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><i class="fa-fw hide"></i><span> 文章</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/archives/"><i class="fa-fw fas fa-archive"></i><span> 归档</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fas fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/categories/"><i class="fa-fw fas fa-folder-open"></i><span> 分类</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> ACM生涯</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E7%AE%97%E6%B3%95%E9%A2%98%E8%A7%A3/"><i class="fa-fw fas fa-paper-plane"></i><span> 算法题解</span></a></li><li><a class="site-page child" href="/categories/%E7%AE%97%E6%B3%95%E9%9A%8F%E7%AC%94/"><i class="fa-fw fas fa-solid fa-laptop-code"></i><span> 算法随笔</span></a></li><li><a class="site-page child" href="/contests/"><i class="fa-fw fas fa-solid fa-bell"></i><span> 近期比赛</span></a></li><li><a class="site-page child" href="/rankinynu/"><i class="fa-fw fas fa-regular fa-ranking-star"></i><span> 校队积分榜</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 开发笔记</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E5%AE%9E%E7%94%A8%E6%89%8B%E5%86%8C/"><i class="fa-fw fas fa-solid fa-book"></i><span> 实用手册</span></a></li><li><a class="site-page child" href="/categories/%E6%9D%82%E8%B0%88/"><i class="fa-fw fas fa-solid fa-laptop-code"></i><span> 杂谈</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 炼丹之路</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><i class="fa-fw fas fa-brands fa-battle-net"></i><span> 深度学习</span></a></li><li><a class="site-page child" href="/categories/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/"><i class="fa-fw fas fa-regular fa-robot"></i><span> 机器学习</span></a></li><li><a class="site-page child" href="/categories/%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E5%A4%84%E7%90%86/"><i class="fa-fw fas fa-solid fa-comment-alt"></i><span> 自然语言处理</span></a></li></ul></div><div class="menus_item"><a class="site-page group" href="javascript:void(0);"><span> 个人</span><i class="fas fa-chevron-down"></i></a><ul class="menus_item_child"><li><a class="site-page child" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 关于我</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/link/"><i class="fa-fw fas fa-link"></i><span> 友链</span></a></div></div><div id="toggle-menu"><a class="site-page" href="javascript:void(0);"><i class="fas fa-bars fa-fw"></i></a></div></div></nav><div id="post-info"><h1 class="post-title">第 4 章：注意力机制与Transformer 学习笔记</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-14T12:35:23.000Z" title="发表于 2026-01-14 20:35:23">2026-01-14</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-01-14T12:52:52.469Z" title="更新于 2026-01-14 20:52:52">2026-01-14</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/base-llm%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">base-llm学习笔记</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-wordcount"><i class="far fa-file-word fa-fw post-meta-icon"></i><span class="post-meta-label">字数总计:</span><span class="word-count">980</span><span class="post-meta-separator">|</span><i class="far fa-clock fa-fw post-meta-icon"></i><span class="post-meta-label">阅读时长:</span><span>3分钟</span></span><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title="第 4 章：注意力机制与Transformer 学习笔记"><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">阅读量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="post-content" id="article-container"><h1 id="第一节-seq2seq-架构"><a class="markdownIt-Anchor" href="#第一节-seq2seq-架构"></a> 第一节 Seq2Seq 架构</h1>
+<h2 id="1-为什么需要-seq2seq"><a class="markdownIt-Anchor" href="#1-为什么需要-seq2seq"></a> 1. 为什么需要 Seq2Seq</h2>
+<p>传统 RNN / LSTM 擅长三类任务：</p>
+<ul>
+<li><strong>Many-to-One</strong>：序列 → 一个向量（情感分类）</li>
+<li><strong>Many-to-Many（对齐）</strong>：每个输入对应一个输出（NER、POS）</li>
+<li><strong>One-to-Many</strong>：固定输入 → 序列（图像描述）</li>
+</ul>
+<p>但在 <strong>机器翻译</strong> 这类任务中：</p>
+<ul>
+<li>输入输出 <strong>长度不固定</strong></li>
+<li>输入输出 <strong>不严格对齐</strong></li>
+</ul>
+<p>→ 需要一种能“整体理解一句话，再生成另一句话”的结构<br />
+→ <strong>Seq2Seq（Encoder–Decoder）</strong></p>
+<hr />
+<h2 id="2-从-autoencoder-到-seq2seq"><a class="markdownIt-Anchor" href="#2-从-autoencoder-到-seq2seq"></a> 2. 从 Autoencoder 到 Seq2Seq</h2>
+<p><strong>Autoencoder</strong>：</p>
+<ul>
+<li>Encoder：输入 → 潜在向量</li>
+<li>Decoder：潜在向量 → 重构输入</li>
+<li>目标：<strong>还原自己</strong></li>
+</ul>
+<p><strong>Seq2Seq</strong>：</p>
+<ul>
+<li>Encoder：输入序列 → 语义表示</li>
+<li>Decoder：语义表示 → <strong>新序列</strong></li>
+<li>目标：<strong>序列转换</strong>（而不是重构）</li>
+</ul>
+<p>👉 本质变化：<br />
+<strong>重构 → 生成</strong></p>
+<hr />
+<h2 id="3-seq2seq-核心结构"><a class="markdownIt-Anchor" href="#3-seq2seq-核心结构"></a> 3. Seq2Seq 核心结构</h2>
+<h3 id="31-整体思想"><a class="markdownIt-Anchor" href="#31-整体思想"></a> 3.1 整体思想</h3>
+<ul>
+<li>Encoder：读完整个输入序列，压缩成一个 <strong>上下文向量 C</strong></li>
+<li>Decoder：以 C 为条件，自回归生成输出序列</li>
+</ul>
+<p>常见实现：<br />
+Encoder / Decoder 都用 <strong>RNN / LSTM / GRU</strong></p>
+<hr />
+<h3 id="32-encoder编码器"><a class="markdownIt-Anchor" href="#32-encoder编码器"></a> 3.2 Encoder（编码器）</h3>
+<ul>
+<li>顺序读取输入词元 (x_1 \sim x_T)</li>
+<li>不断更新隐藏状态</li>
+<li><strong>最后一个时间步的状态 = 上下文向量 C</strong></li>
+</ul>
+<p>常见做法：</p>
+<ul>
+<li>RNN：(C = h_T)</li>
+<li>LSTM：(C = (h_T, c_T))</li>
+</ul>
+<p>补充：</p>
+<ul>
+<li>Encoder 可用 <strong>双向 RNN</strong></li>
+<li>C 也可以由所有 hidden states 聚合得到（拼接 / pooling）</li>
+</ul>
+<hr />
+<h3 id="33-decoder解码器"><a class="markdownIt-Anchor" href="#33-decoder解码器"></a> 3.3 Decoder（解码器）</h3>
+<ul>
+<li>
+<p>本质是一个 <strong>条件语言模型</strong></p>
+</li>
+<li>
+<p>初始状态由 C 初始化</p>
+</li>
+<li>
+<p>从 <code>&lt;SOS&gt;</code> 开始逐词生成</p>
+</li>
+<li>
+<p>每一步输入：</p>
+<ul>
+<li>上一步生成的词</li>
+<li>上一步的隐藏状态</li>
+</ul>
+</li>
+<li>
+<p>遇到 <code>&lt;EOS&gt;</code> 或达到最大长度停止</p>
+</li>
+</ul>
+<p>关键特性：</p>
+<ul>
+<li><strong>自回归</strong></li>
+<li>单向（满足因果性）</li>
+</ul>
+<hr />
+<h3 id="34-decoder-与大语言模型的关系"><a class="markdownIt-Anchor" href="#34-decoder-与大语言模型的关系"></a> 3.4 Decoder 与大语言模型的关系</h3>
+<ul>
+<li>
+<p>去掉 Encoder，只保留 Decoder<br />
+→ <strong>Decoder-only Language Model</strong></p>
+</li>
+<li>
+<p>GPT 就是：</p>
+<ul>
+<li>预测下一个 token</li>
+<li>用 prompt 作为条件</li>
+</ul>
+</li>
+</ul>
+<p>👉 Seq2Seq = Encoder + 条件 LM</p>
+<p>👉 GPT = 纯 LM</p>
+<hr />
+<h2 id="4-关键实现细节"><a class="markdownIt-Anchor" href="#4-关键实现细节"></a> 4. 关键实现细节</h2>
+<h3 id="41-embedding-是否共享"><a class="markdownIt-Anchor" href="#41-embedding-是否共享"></a> 4.1 Embedding 是否共享</h3>
+<ul>
+<li><strong>不共享</strong>：源语言 ≠ 目标语言（英→中）</li>
+<li><strong>共享</strong>：输入输出同语言（摘要、改写）</li>
+</ul>
+<p>共享优点：</p>
+<ul>
+<li>参数更少</li>
+<li>可能学到词语间的隐式对齐</li>
+</ul>
+<hr />
+<h3 id="42-上下文向量-c-的用法"><a class="markdownIt-Anchor" href="#42-上下文向量-c-的用法"></a> 4.2 上下文向量 C 的用法</h3>
+<p><strong>方式一：初始化 Decoder 状态（经典）</strong></p>
+<ul>
+<li>简单直观</li>
+<li>信息可能随时间衰减</li>
+</ul>
+<p><strong>方式二：每个时间步都输入 C</strong></p>
+<ul>
+<li>每步都有全局信息</li>
+<li>但 C 是静态的，仍然无法对齐</li>
+</ul>
+<p>👉 两种方式都存在 <strong>信息瓶颈</strong></p>
+<hr />
+<h3 id="43-损失函数"><a class="markdownIt-Anchor" href="#43-损失函数"></a> 4.3 损失函数</h3>
+<ul>
+<li>每个时间步做一次 softmax</li>
+<li>用 <strong>CrossEntropyLoss</strong></li>
+<li>忽略 <code>&lt;PAD&gt;</code>（ignore_index）</li>
+<li>总损失 = 各时间步损失之和 / 平均</li>
+</ul>
+<hr />
+<h3 id="44-特殊-token-与数据构造"><a class="markdownIt-Anchor" href="#44-特殊-token-与数据构造"></a> 4.4 特殊 Token 与数据构造</h3>
+<p>常见 token：</p>
+<ul>
+<li><code>&lt;PAD&gt;</code>：填充</li>
+<li><code>&lt;SOS&gt;</code>：解码起始</li>
+<li><code>&lt;EOS&gt;</code>：句子结束</li>
+<li><code>&lt;UNK&gt;</code>：未登录词</li>
+</ul>
+<p>Decoder 训练时的“错位”设计：</p>
+<ul>
+<li>原目标：<code>W X Y Z</code></li>
+<li>Decoder 输入：<code>&lt;SOS&gt; W X Y</code></li>
+<li>Decoder 目标：<code>W X Y Z &lt;EOS&gt;</code></li>
+</ul>
+<hr />
+<h2 id="5-训练-vs-推理"><a class="markdownIt-Anchor" href="#5-训练-vs-推理"></a> 5. 训练 vs 推理</h2>
+<h3 id="51-教师强制teacher-forcing"><a class="markdownIt-Anchor" href="#51-教师强制teacher-forcing"></a> 5.1 教师强制（Teacher Forcing）</h3>
+<p>训练时：</p>
+<ul>
+<li>
+<p>下一步输入 <strong>用真实标签</strong></p>
+</li>
+<li>
+<p>好处：</p>
+<ul>
+<li>收敛更快</li>
+<li>更稳定</li>
+</ul>
+</li>
+<li>
+<p>缺点：</p>
+<ul>
+<li>训练 / 推理不一致（exposure bias）</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="52-推理自回归"><a class="markdownIt-Anchor" href="#52-推理自回归"></a> 5.2 推理（自回归）</h3>
+<p>推理时：</p>
+<ul>
+<li>没有真实答案</li>
+<li>用 <strong>自己上一步的预测</strong> 作为输入</li>
+</ul>
+<p>实现要点：</p>
+<ul>
+<li><strong>缓存 hidden / cell</strong></li>
+<li>每一步只算一次 RNN</li>
+<li>避免从头重复计算</li>
+</ul>
+<hr />
+<h3 id="53-解码策略"><a class="markdownIt-Anchor" href="#53-解码策略"></a> 5.3 解码策略</h3>
+<ul>
+<li>
+<p><strong>Greedy Search</strong></p>
+<ul>
+<li>每步选最大概率</li>
+<li>快，但容易局部最优</li>
+</ul>
+</li>
+<li>
+<p><strong>Beam Search</strong></p>
+<ul>
+<li>保留多个候选</li>
+<li>全局效果更好</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="6-seq2seq-的泛化应用"><a class="markdownIt-Anchor" href="#6-seq2seq-的泛化应用"></a> 6. Seq2Seq 的泛化应用</h2>
+<p>Encoder–Decoder 是一种<strong>通用转换范式</strong>：</p>
+<ul>
+<li>语音 → 文本（ASR）</li>
+<li>图像 → 文本（Image Caption）</li>
+<li>文本 → 语音（TTS）</li>
+<li>QA / 摘要 / 对话</li>
+<li>甚至分类也可“生成化”</li>
+</ul>
+<hr />
+<h2 id="7-核心局限信息瓶颈"><a class="markdownIt-Anchor" href="#7-核心局限信息瓶颈"></a> 7. 核心局限：信息瓶颈</h2>
+<p>问题本质：</p>
+<ul>
+<li>Encoder → Decoder 之间 <strong>只有一个固定长度向量 C</strong></li>
+</ul>
+<p>后果：</p>
+<ol>
+<li><strong>长句信息压缩困难</strong></li>
+<li>Decoder 每一步看到的都是同一个 C</li>
+<li>无法“对齐”输入与输出位置</li>
+</ol>
+<p>直观理解：</p>
+<blockquote>
+<p>让人把一整篇文章压缩成一句话，再复述全文</p>
+</blockquote>
+<p>👉 直接催生了 <strong>Attention 机制</strong></p>
+<p>👉 最终发展为 <strong>Transformer</strong></p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://blog.octalzhihao.top">octal</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://blog.octalzhihao.top/posts/13793.html">https://blog.octalzhihao.top/posts/13793.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来自 <a href="https://blog.octalzhihao.top" target="_blank">Octal's Tiny Home🍭</a>！</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/datawhale%E7%BB%84%E9%98%9F%E5%AD%A6%E4%B9%A0-base-llm%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0-%E5%A4%A7%E6%A8%A1%E5%9E%8B/">datawhale组队学习, base-llm学习笔记, 大模型</a></div><div class="post_share"><div class="social-share" data-image="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_4.webp" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><div class="next-post pull-full"><a href="/posts/22078.html" title="[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享"><img class="cover" src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_17.webp" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="pagination-info"><div class="label">下一篇</div><div class="next_info">[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享</div></div></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info"><div class="is-center"><div class="avatar-img"><img src="https://picbed.octalzhihao.top/img/myblog/profile.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info__name">octal</div><div class="author-info__description"></div></div><div class="card-info-data site-data is-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">20</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">13</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">11</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/octal-zhihao"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons is-center"><a class="social-icon" href="https://github.com/octal-zhihao" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:octal_zhihao@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="https://codeforces.com/profile/octal2024" target="_blank" title="Codeforces"><i class="custom_codeforces" style="color: #1f8acb;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is octal's Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%AC%AC%E4%B8%80%E8%8A%82-seq2seq-%E6%9E%B6%E6%9E%84"><span class="toc-number">1.</span> <span class="toc-text"> 第一节 Seq2Seq 架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-seq2seq"><span class="toc-number">1.1.</span> <span class="toc-text"> 1. 为什么需要 Seq2Seq</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E4%BB%8E-autoencoder-%E5%88%B0-seq2seq"><span class="toc-number">1.2.</span> <span class="toc-text"> 2. 从 Autoencoder 到 Seq2Seq</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-seq2seq-%E6%A0%B8%E5%BF%83%E7%BB%93%E6%9E%84"><span class="toc-number">1.3.</span> <span class="toc-text"> 3. Seq2Seq 核心结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#31-%E6%95%B4%E4%BD%93%E6%80%9D%E6%83%B3"><span class="toc-number">1.3.1.</span> <span class="toc-text"> 3.1 整体思想</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#32-encoder%E7%BC%96%E7%A0%81%E5%99%A8"><span class="toc-number">1.3.2.</span> <span class="toc-text"> 3.2 Encoder（编码器）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#33-decoder%E8%A7%A3%E7%A0%81%E5%99%A8"><span class="toc-number">1.3.3.</span> <span class="toc-text"> 3.3 Decoder（解码器）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#34-decoder-%E4%B8%8E%E5%A4%A7%E8%AF%AD%E8%A8%80%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%85%B3%E7%B3%BB"><span class="toc-number">1.3.4.</span> <span class="toc-text"> 3.4 Decoder 与大语言模型的关系</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-%E5%85%B3%E9%94%AE%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82"><span class="toc-number">1.4.</span> <span class="toc-text"> 4. 关键实现细节</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#41-embedding-%E6%98%AF%E5%90%A6%E5%85%B1%E4%BA%AB"><span class="toc-number">1.4.1.</span> <span class="toc-text"> 4.1 Embedding 是否共享</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#42-%E4%B8%8A%E4%B8%8B%E6%96%87%E5%90%91%E9%87%8F-c-%E7%9A%84%E7%94%A8%E6%B3%95"><span class="toc-number">1.4.2.</span> <span class="toc-text"> 4.2 上下文向量 C 的用法</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#43-%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0"><span class="toc-number">1.4.3.</span> <span class="toc-text"> 4.3 损失函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#44-%E7%89%B9%E6%AE%8A-token-%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%9E%84%E9%80%A0"><span class="toc-number">1.4.4.</span> <span class="toc-text"> 4.4 特殊 Token 与数据构造</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-%E8%AE%AD%E7%BB%83-vs-%E6%8E%A8%E7%90%86"><span class="toc-number">1.5.</span> <span class="toc-text"> 5. 训练 vs 推理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#51-%E6%95%99%E5%B8%88%E5%BC%BA%E5%88%B6teacher-forcing"><span class="toc-number">1.5.1.</span> <span class="toc-text"> 5.1 教师强制（Teacher Forcing）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#52-%E6%8E%A8%E7%90%86%E8%87%AA%E5%9B%9E%E5%BD%92"><span class="toc-number">1.5.2.</span> <span class="toc-text"> 5.2 推理（自回归）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#53-%E8%A7%A3%E7%A0%81%E7%AD%96%E7%95%A5"><span class="toc-number">1.5.3.</span> <span class="toc-text"> 5.3 解码策略</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-seq2seq-%E7%9A%84%E6%B3%9B%E5%8C%96%E5%BA%94%E7%94%A8"><span class="toc-number">1.6.</span> <span class="toc-text"> 6. Seq2Seq 的泛化应用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E6%A0%B8%E5%BF%83%E5%B1%80%E9%99%90%E4%BF%A1%E6%81%AF%E7%93%B6%E9%A2%88"><span class="toc-number">1.7.</span> <span class="toc-text"> 7. 核心局限：信息瓶颈</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/posts/13793.html" title="第 4 章：注意力机制与Transformer 学习笔记"><img src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_4.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="第 4 章：注意力机制与Transformer 学习笔记"/></a><div class="content"><a class="title" href="/posts/13793.html" title="第 4 章：注意力机制与Transformer 学习笔记">第 4 章：注意力机制与Transformer 学习笔记</a><time datetime="2026-01-14T12:35:23.000Z" title="发表于 2026-01-14 20:35:23">2026-01-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/22078.html" title="[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享"><img src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_17.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享"/></a><div class="content"><a class="title" href="/posts/22078.html" title="[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享">[书生大模型]论文分类微调打榜赛二等奖-比赛方案分享</a><time datetime="2025-08-14T09:13:52.000Z" title="发表于 2025-08-14 17:13:52">2025-08-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/56265.html" title="[Datawhale AI夏令营] 语音克隆比赛方案"><img src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_11.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="[Datawhale AI夏令营] 语音克隆比赛方案"/></a><div class="content"><a class="title" href="/posts/56265.html" title="[Datawhale AI夏令营] 语音克隆比赛方案">[Datawhale AI夏令营] 语音克隆比赛方案</a><time datetime="2025-08-12T10:29:27.000Z" title="发表于 2025-08-12 18:29:27">2025-08-12</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/21889.html" title="ACM常用库函数系列：lower_bound/upper_bound"><img src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_11.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="ACM常用库函数系列：lower_bound/upper_bound"/></a><div class="content"><a class="title" href="/posts/21889.html" title="ACM常用库函数系列：lower_bound/upper_bound">ACM常用库函数系列：lower_bound/upper_bound</a><time datetime="2025-04-03T06:30:52.000Z" title="发表于 2025-04-03 14:30:52">2025-04-03</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/posts/1115.html" title="nndl学习笔记 第一章：绪论"><img src="https://picbed.octalzhihao.top/img/myblog/cover/default_cover_19.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="nndl学习笔记 第一章：绪论"/></a><div class="content"><a class="title" href="/posts/1115.html" title="nndl学习笔记 第一章：绪论">nndl学习笔记 第一章：绪论</a><time datetime="2025-03-26T07:29:43.000Z" title="发表于 2025-03-26 15:29:43">2025-03-26</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2024 - 2026 By octal</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="浅色和深色模式转换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><i class="fas fa-arrow-up"></i><span id="percent">0</span></button><button id="go-down" type="button" title="直达底部" onclick="btf.scrollToDest(document.body.scrollHeight, 500)"><i class="fas fa-arrow-down"></i></button></div></div><div><script src="/js/utils.js?v=4.13.0"></script><script src="/js/main.js?v=4.13.0"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0.33/dist/fancybox/fancybox.umd.min.js"></script><div class="js-pjax"><script>if (!window.MathJax) {
+  window.MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']],
+      tags: 'ams'
+    },
+    chtml: {
+      scale: 1.1
+    },
+    options: {
+      renderActions: {
+        findScript: [10, doc => {
+          for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+            const display = !!node.type.match(/; *mode=display/)
+            const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+            const text = document.createTextNode('')
+            node.parentNode.replaceChild(text, node)
+            math.start = {node: text, delim: '', n: 0}
+            math.end = {node: text, delim: '', n: 0}
+            doc.math.push(math)
+          }
+        }, '']
+      }
+    }
+  }
+  
+  const script = document.createElement('script')
+  script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.min.js'
+  script.id = 'MathJax-script'
+  script.async = true
+  document.head.appendChild(script)
+} else {
+  MathJax.startup.document.state(0)
+  MathJax.texReset()
+  MathJax.typesetPromise()
+}</script></div><script defer data-pjax src="/js/readPercent.js"></script><script defer src="https://npm.elemecdn.com/jquery@latest/dist/jquery.min.js"></script><script defer data-pjax src="/js/cat.js"></script><script async src="/js/fps.js"></script><script id="canvas_nest" defer="defer" color="0,0,255" opacity="0.7" zIndex="-1" count="99" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/canvas-nest.min.js"></script><script id="click-heart" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.3/dist/click-heart.min.js" async="async" mobile="false"></script><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script>let pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
+
+var pjax = new Pjax({
+  elements: 'a:not([target="_blank"]):not([href="/music/"]):not([href="/no-pjax/"])',
+  selectors: pjaxSelectors,
+  cacheBust: false,
+  analytics: false,
+  scrollRestoration: false
+})
+
+document.addEventListener('pjax:send', function () {
+
+  // removeEventListener
+  btf.removeGlobalFnEvent('pjax')
+  btf.removeGlobalFnEvent('themeChange')
+
+  document.getElementById('rightside').classList.remove('rightside-show')
+  
+  if (window.aplayers) {
+    for (let i = 0; i < window.aplayers.length; i++) {
+      if (!window.aplayers[i].options.fixed) {
+        window.aplayers[i].destroy()
+      }
+    }
+  }
+
+  typeof typed === 'object' && typed.destroy()
+
+  //reset readmode
+  const $bodyClassList = document.body.classList
+  $bodyClassList.contains('read-mode') && $bodyClassList.remove('read-mode')
+
+  typeof disqusjs === 'object' && disqusjs.destroy()
+})
+
+document.addEventListener('pjax:complete', function () {
+  window.refreshFn()
+
+  document.querySelectorAll('script[data-pjax]').forEach(item => {
+    const newScript = document.createElement('script')
+    const content = item.text || item.textContent || item.innerHTML || ""
+    Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
+    newScript.appendChild(document.createTextNode(content))
+    item.parentNode.replaceChild(newScript, item)
+  })
+
+  GLOBAL_CONFIG.islazyload && window.lazyLoadInstance.update()
+
+  typeof panguInit === 'function' && panguInit()
+
+  // google analytics
+  typeof gtag === 'function' && gtag('config', '', {'page_path': window.location.pathname});
+
+  // baidu analytics
+  typeof _hmt === 'object' && _hmt.push(['_trackPageview',window.location.pathname]);
+
+  typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
+
+  // prismjs
+  typeof Prism === 'object' && Prism.highlightAll()
+})
+
+document.addEventListener('pjax:error', e => {
+  if (e.request.status === 404) {
+    pjax.loadUrl('/404.html')
+  }
+})</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="is-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据库加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=4.13.0"></script></div></div><!-- hexo injector body_end start --> <script data-pjax>if(document.getElementById('recent-posts') && (location.pathname ==='/'|| '/' ==='all')){
+    var parent = document.getElementById('recent-posts');
+    var child = '<div class="recent-post-item" style="width:100%;height: auto"><div id="catalog_magnet"><div class="magnet_item"><a class="magnet_link" href="https://blog.octalzhihao.top/categories/算法题解/"><div class="magnet_link_context" style=""><span style="font-weight:500;flex:1">💡 octalの算法题解 (3)</span><span style="padding:0px 4px;border-radius: 8px;"><i class="fas fa-arrow-circle-right"></i></span></div></a></div><div class="magnet_item" style="visibility: hidden"></div><a class="magnet_link_more"  href="https://blog.octalzhihao.top/categories" style="flex:1;text-align: center;margin-bottom: 10px;">查看更多...</a></div></div>';
+    console.log('已挂载magnet')
+    parent.insertAdjacentHTML("afterbegin",child)}
+     </script><style>#catalog_magnet{flex-wrap: wrap;display: flex;width:100%;justify-content:space-between;padding: 10px 10px 0 10px;align-content: flex-start;}.magnet_item{flex-basis: calc(50% - 5px);background: #f2f2f2;margin-bottom: 10px;border-radius: 8px;transition: all 0.2s ease-in-out;}.magnet_item:hover{background: #b30070}.magnet_link_more{color:#555}.magnet_link{color:black}.magnet_link:hover{color:white}@media screen and (max-width: 600px) {.magnet_item {flex-basis: 100%;}}.magnet_link_context{display:flex;padding: 10px;font-size:16px;transition: all 0.2s ease-in-out;}.magnet_link_context:hover{padding: 10px 20px;}</style>
+    <style></style><script data-pjax>
+  function butterfly_footer_beautify_injector_config(){
+    var parent_div_git = document.getElementById('footer-wrap');
+    var item_html = '<div id="workboard"></div><p id="ghbdages"><a class="github-badge" target="_blank" href="https://hexo.io/" style="margin-inline:5px" data-title="博客框架为Hexo" title=""><img src="https://img.shields.io/badge/Frame-Hexo-blue?style=flat&amp;logo=hexo" alt=""/></a><a class="github-badge" target="_blank" href="https://butterfly.js.org/" style="margin-inline:5px" data-title="主题版本Butterfly" title=""><img src="https://img.shields.io/badge/Theme-Butterfly-6513df?style=flat&amp;logo=bitdefender" alt=""/></a><a class="github-badge" target="_blank" href="https://vercel.com/" style="margin-inline:5px" data-title="本站采用双线部署，默认线路托管于Vercel" title=""><img src="https://img.shields.io/badge/Hosted-Vercel-brightgreen?style=flat&amp;logo=Vercel" alt=""/></a><a class="github-badge" target="_blank" href="https://beian.miit.gov.cn/" style="margin-inline:5px" data-title="浙ICP备2024119825号-1" title=""><img src="https://img.shields.io/badge/%E6%B5%99ICP%E5%A4%87-2024119825%E5%8F%B7--1-e1d492?style=flat&amp;logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAdCAYAAAC9pNwMAAABS2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNS42LWMxNDIgNzkuMTYwOTI0LCAyMDE3LzA3LzEzLTAxOjA2OjM5ICAgICAgICAiPgogPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIi8+CiA8L3JkZjpSREY+CjwveDp4bXBtZXRhPgo8P3hwYWNrZXQgZW5kPSJyIj8+nhxg7wAACNlJREFUSInF1mmMVeUdx/Hv2e+5+519mJWBYQZkGxZZxLKJqBXGoLS1iXWrmihotFXaJiTWWlsbl6q1aetWd5u0VkKjNG4YEJSlOCibDLMwM8x679z9nnPP1jcVJUxf+7z6J8+LT37/Z4VvaQhfFS8+sBXbctCDGrVTKlBUH4mxAbI9Hfj0IJLsp6paJ5/tmn20N/D0wKDRMq9F/c3M2U1/V0vDfWMFh+tv/Ig1zYPMabDImPJ52OaXO87W580KggCiiOsJOJ6I3wcNFaaeNKxrt72f2fLGu4FpJ/sDQABRzD22fH7/Yze069vGc6mrDLNIJCDik10sxz2by3VdPM87xzkP9jwPTZFRVI1YUJKH+oy7n3tbvv/P2wW/UQxRWe6w4ZJRptYLHDoCuz8v5cP92XbI762O+h6UVWHnUFbPpU0fEb2A60mMJ7MUi9b/b7UgKhiZMaIxm8YLplLMDPz8hl/EH+rs8TNlUpFf32uyZJGLPDwCiTGUyTWodTN49eUCdz2YwXb9NNcObp1X98WDoufynzMVCEKGn27ayPTWBi5ad8P5iQUkJEnFLjqM9Z+hrVX0vfDe6K2dPRWsW2bwyp9EUifSJB84gdxrkR0eRgv1o/3I4fbbprJ6scqamzVO9pffec1S5ZWY2Nfz5qEy/FqOC2Y3s3j53HMSi18VRjFPwSwg+1RfVbl115vvJrsfej7UGIsYPPGgQ7JXoO+Xx5B3dHEomyJ9x1qiQozkr95h5937aFnVyouPlgJK+Ss7Fxz64OTSxSX+LHYxT2IsRW5kbGI4oHcR0jqoqTjV9se3I7/f8rS/ClS23GxSXhph6L5d9Akm7qqZhHWBQGUJ+CWGFzcg7e7m6D3/ZuW1Ea5YKdA3EojuONi813TqNi+YPYOKUhXDtCeGL26/hakLLiEcdsaHRkRAoLRc4fJrmhnekyF0apgZowWSwwkaa+rw3f8WA1GZZsPP5JEChX8dhZTN6iU6kAcs5s+dHd183SJ0VVKL57pfw6YdRQw23aeWTns47DPTALWlRTR7kMLew6hGgYqUhWXYFFUdPZ6lUBahLA8hVcOftckfi7No7VRAAQqsX1dybfvG1qwriM9mM5mJ4e4jO5Cc01dPqixbr8tWGBQUL4vjGigEEShi+xUmZ2RiR/sJ1pbS8NkgZrKAGw0TsgQsQyFaF/nfYTGprAlMFysbA1pI3mhkR6snhGsaymYGvPyFEb9IdbUE2AzFFTwpRqCtBY0wmdER+hZW4j63gcJj38V+/ErSUZXsYBfjIZHIRW0c2Z8BskCAqN+CbBJBFnyyKjR+Ez57nBxLqpfMUeSISElMBFz6x2Q6OxzWrYjyxWVzEewioU3LCS5vQY6nMUrLwNaxXvoQ59IloFSx54PPAZtQLExVZZDxsVE8J4dn6v4JYatgbSjk0owPw7RGH2ADMo88Z7L20ip8f7gC7fAo0q4+0rt7kEQDvaghVZbiPHUHcyeXcfLjT3jmpR7AYsnSScya3UR8bARVMck7Y/cB75/X6rDf3Fg2dw2jKZm5dXGm1LuAzO5DCo9v6aT0ibco5kzOvLOP+NGTFJtDpPYeZKijk/Rn3QxsfZV7txwhX7ABiZUXBsGvIvguQApNQQva9RMmTvZ2dpVUls+tX/UD7GN/Y8Ws05w6rQF+9vyzg1vZjbvMRJhXiRSU8DpTFFe0QE8S6SfPkOkZoktrB2oAhZWrwljxOPmchiSMYOWNoxNuruFU5vWeXdsojiUon345113dBBQBmTYlTimgdB8nfPo4WjaNFgN9OMEkJ02dnadVt5ki54Esqy+bzKJltVhSPbI3iN2zCyMTeXNCuG7Omm2Zok7PR2+R7jvD8ouruHhmCrB5jVZeYxLdrTP4sr4Vtd9g4MA4qc4c+6cu5NPamfw4P59t2WrA4YdXKkASf7SFivo6PDdEPmf1fRM++zp1bH/0r4I1dD1ODtOWaW4IsvPjL7nqXhloQiSPwjjgMYkMASyGEBkjhISCQwkwzve/18AbT+pk8pVY4UacQi9y+gyZ0eRAw4qHa89LXEx1LXMSPfhDJYRb59BtlLKg2WPT2l6qYl1svtGkrLYckyA1S+t5+2ATm37WCui0LSynsckDNH5zTxAchbQtkx08hDHYiW6NgC0enHBzEZ102UDH8QORdEckjEzZrNWkRydzyx17uGnDXqbUnGZ6dRPjSY91q2TqwjFuvTxLo5Zn5Qo/pumRSFcTLQtybEhGE0fQrDhhJ0VvH2lTnnHPhGtsmWan469apERjI2MH3qN7+7MEfH6ql29CbV7PvsMG32k6yU2XDhEKyZw66eJaRdrXR7CzCcqUNC3zwgymPJRCH4KRRLINimpL14A5Y4GDeOqbsPRVcfuN7Xj44pav/hFfrNT2kr2rsqf2Ibp5pEA14ZIImUyW3t5REkkTXRGQ/DGGhtLginhqCWknQDE5hKf5UFSF9Lj020Q2ul5V1AR2hr+8vuP8Vlc2zMPRxoSjnx7XBC14sDoydahSGq7KdO/HFyrBchxCVfX4fDKp4T7SCQejYODZLrYgIqgKFsNIgQqEYob8mW6yiUyb7Z64LVK/+B85xznnJ3AWzqTzuIX46mr5wLs+UUTyIriBCjRNxguHMJIFDLEEvXEOVRWnSJ0+jCd4CJoGjoedM1CLcXQziW3nMV2TSMBeOx7vWZvPt1r+cMPzE8KunaUkFn0vNrvtqXj34c1W6gzxlEQ6naIoBahtnkMwoFMwIVzSRNguMt53Aj2s4nkSlgPoGqLkICsRNF0gl8rYWuP8+11/w/OOJDEhHPKLCIpOXmi+M9AgP+maiesLifF2T1Rn5ZNj5Lo/Qc/GcPMmhdoqlEgIGzCK4PiCmJKK68p4KfF3qYGuF0qCRUkJTzleUbvQyWRTuE5xYthxQbBs7EISAbkzUFG3VfXXbK2YFi3X/eryfKKnqVBItNjJxDzH8erddC4SqWwcN5WyTtlyO1RP/Lh3eHD76MB40swmiDVJyDLYRhpc5+ub6tse/wWKbvSQEAw1awAAAABJRU5ErkJggg==" alt=""/></a><a class="github-badge" target="_blank" href="https://icp.gov.moe/?keyword=20241415" style="margin-inline:5px" data-title="本站以加入萌ICP豪华套餐，萌ICP备20241415号" title=""><img src="https://img.shields.io/badge/%E8%90%8CICP%E5%A4%87-20241415-fe1384?style-flat&amp;logo=data:image/png;base64,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" alt=""/></a><a class="github-badge" target="_blank" href="https://github.com/" style="margin-inline:5px" data-title="本站项目由Github托管" title=""><img src="https://img.shields.io/badge/Source-Github-d021d6?style=flat&amp;logo=GitHub" alt=""/></a><a class="github-badge" target="_blank" href="http://creativecommons.org/licenses/by-nc-sa/4.0/" style="margin-inline:5px" data-title="本站采用知识共享署名-非商业性使用-相同方式共享4.0国际许可协议进行许可" title=""><img src="https://img.shields.io/badge/Copyright-BY--NC--SA%204.0-d42328?style=flat&amp;logo=Claris" alt=""/></a></p>';
+    console.log('已挂载butterfly_footer_beautify')
+    parent_div_git.insertAdjacentHTML("beforeend",item_html)
+    }
+  var elist = '/rankinynu/'.split(',');
+  var cpage = location.pathname;
+  var epage = 'all';
+  var flag = 0;
+
+  for (var i=0;i<elist.length;i++){
+    if (cpage.includes(elist[i])){
+      flag++;
+    }
+  }
+
+  if ((epage ==='all')&&(flag == 0)){
+    butterfly_footer_beautify_injector_config();
+  }
+  else if (epage === cpage){
+    butterfly_footer_beautify_injector_config();
+  }
+  </script><script async src="/js/runtime.js"></script><script data-pjax src="https://npm.elemecdn.com/hexo-filter-gitcalendar/lib/gitcalendar.js"></script><script data-pjax>
+  function gitcalendar_injector_config(){
+      var parent_div_git = document.getElementById('gitZone');
+      var item_html = '<div class="recent-post-item" id="gitcalendarBar" style="width:100%;height:auto;padding:10px;"><style>#git_container{min-height: 280px}@media screen and (max-width:650px) {#git_container{min-height: 0px}}</style><div id="git_loading" style="width:10%;height:100%;margin:0 auto;display: block;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 50 50" style="enable-background:new 0 0 50 50" xml:space="preserve"><path fill="#d0d0d0" d="M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z" transform="rotate(275.098 25 25)"><animatetransform attributeType="xml" attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="0.6s" repeatCount="indefinite"></animatetransform></path></svg><style>#git_container{display: none;}</style></div><div id="git_container"></div></div>';
+      parent_div_git.insertAdjacentHTML("afterbegin",item_html)
+      console.log('已挂载gitcalendar')
+      }
+
+    if( document.getElementById('gitZone') && (location.pathname ==='/about/'|| '/about/' ==='all')){
+        gitcalendar_injector_config()
+        GitCalendarInit("https://gitcalendar.octalzhihao.top/api?octal-zhihao",['#ebedf0', '#fdcdec', '#fc9bd9', '#fa6ac5', '#f838b2', '#f5089f', '#c4067e', '#92055e', '#540336', '#48022f', '#30021f'],'octal-zhihao')
+    }
+  </script><!-- hexo injector body_end end --></body></html>
